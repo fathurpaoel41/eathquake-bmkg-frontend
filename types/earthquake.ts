@@ -14,7 +14,9 @@ export interface Earthquake {
   Magnitude: string;
   Kedalaman: string;
   Wilayah: string;
-  Dirasakan: string;
+  Dirasakan?: string;
+  Potensi?: string;
+  Shakemap?: string;
 }
 
 export interface ProcessedEarthquake {
@@ -29,6 +31,37 @@ export interface ProcessedEarthquake {
   longitude: number;
   felt: string;
   coordinates: string;
+  potential?: string;
+  shakemap?: string;
+}
+
+// New interfaces for different API response structures
+export interface LatestEarthquakeResponse {
+  status: boolean;
+  message: string;
+  data: Earthquake;
+}
+
+export interface Latest15EarthquakeResponse {
+  status: boolean;
+  message: string;
+  data: Earthquake[];
+}
+
+export interface FeltEarthquakeResponse {
+  status: boolean;
+  message: string;
+  data: Earthquake[];
+}
+
+export interface AllEarthquakeResponse {
+  status: boolean;
+  message: string;
+  data: {
+    latest: Earthquake;
+    latest15: Earthquake[];
+    felt: Earthquake[];
+  };
 }
 
 export type SortField = 'date' | 'magnitude' | 'depth' | 'location';
