@@ -79,14 +79,14 @@ export function EarthquakeList({
       <div className="p-4 border-b border-gray-200 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">
-            Recent Earthquakes ({sortedAndFilteredEarthquakes.length})
+            Gempa Bumi Terbaru ({sortedAndFilteredEarthquakes.length})
           </h2>
         </div>
         
         {/* Search and Filter Controls */}
         <div className="space-y-3">
           <Input
-            placeholder="Search by location..."
+            placeholder="Cari berdasarkan lokasi..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
@@ -94,14 +94,14 @@ export function EarthquakeList({
           
           <Select value={magnitudeFilter} onValueChange={(value: any) => setMagnitudeFilter(value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Filter by magnitude" />
+              <SelectValue placeholder="Filter berdasarkan magnitudo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Magnitudes</SelectItem>
-              <SelectItem value="3+">3.0+ (Minor and above)</SelectItem>
-              <SelectItem value="4+">4.0+ (Light and above)</SelectItem>
-              <SelectItem value="5+">5.0+ (Moderate and above)</SelectItem>
-              <SelectItem value="6+">6.0+ (Strong and above)</SelectItem>
+              <SelectItem value="all">Semua Magnitudo</SelectItem>
+              <SelectItem value="3+">3.0+ (Kecil ke atas)</SelectItem>
+              <SelectItem value="4+">4.0+ (Ringan ke atas)</SelectItem>
+              <SelectItem value="5+">5.0+ (Sedang ke atas)</SelectItem>
+              <SelectItem value="6+">6.0+ (Kuat ke atas)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -115,7 +115,7 @@ export function EarthquakeList({
             className="flex items-center space-x-1"
           >
             <Clock className="w-3 h-3" />
-            <span>Date</span>
+            <span>Tanggal</span>
             {getSortIcon('date')}
           </Button>
           
@@ -126,7 +126,7 @@ export function EarthquakeList({
             className="flex items-center space-x-1"
           >
             <Gauge className="w-3 h-3" />
-            <span>Magnitude</span>
+            <span>Magnitudo</span>
             {getSortIcon('magnitude')}
           </Button>
           
@@ -137,7 +137,7 @@ export function EarthquakeList({
             className="flex items-center space-x-1"
           >
             <Layers className="w-3 h-3" />
-            <span>Depth</span>
+            <span>Kedalaman</span>
             {getSortIcon('depth')}
           </Button>
           
@@ -148,7 +148,7 @@ export function EarthquakeList({
             className="flex items-center space-x-1"
           >
             <MapPin className="w-3 h-3" />
-            <span>Location</span>
+            <span>Lokasi</span>
             {getSortIcon('location')}
           </Button>
         </div>
@@ -159,7 +159,7 @@ export function EarthquakeList({
         {sortedAndFilteredEarthquakes.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>No earthquakes found matching your criteria.</p>
+            <p>Tidak ada gempa bumi yang sesuai dengan kriteria pencarian.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -177,7 +177,7 @@ export function EarthquakeList({
                       <div 
                         className="w-4 h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: getMagnitudeColor(earthquake.magnitude) }}
-                        title={`${getMagnitudeLabel(earthquake.magnitude)} earthquake`}
+                        title={`Gempa ${getMagnitudeLabel(earthquake.magnitude)}`}
                       />
                       <span className="font-semibold text-gray-900 text-sm">
                         M {earthquake.magnitude.toFixed(1)}
@@ -196,12 +196,19 @@ export function EarthquakeList({
                         <span>{earthquake.date} • {earthquake.time}</span>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <span>Depth: {earthquake.depth} km</span>
+                        <span>Kedalaman: {earthquake.depth} km</span>
                         {earthquake.felt && (
-                          <span>Felt: {earthquake.felt}</span>
+                          <span className="text-orange-600">Dirasakan: {earthquake.felt}</span>
                         )}
                       </div>
+                      <div className="text-gray-500">
+                        {earthquake.latitude.toFixed(3)}°, {earthquake.longitude.toFixed(3)}°
+                      </div>
                     </div>
+                  </div>
+                  
+                  <div className="ml-2 flex-shrink-0">
+                    <MapPin className="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
               </div>

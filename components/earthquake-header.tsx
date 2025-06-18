@@ -16,10 +16,10 @@ export function EarthquakeHeader({ lastUpdated, isLoading }: EarthquakeHeaderPro
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Indonesia Earthquake Monitor
+                Pemantauan Gempa Indonesia
               </h1>
               <p className="text-sm text-gray-600">
-                Real-time seismic activity data from BMKG
+                Data aktivitas seismik real-time dari BMKG
               </p>
             </div>
           </div>
@@ -28,7 +28,7 @@ export function EarthquakeHeader({ lastUpdated, isLoading }: EarthquakeHeaderPro
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Clock className="w-4 h-4" />
               <span>
-                Last updated: {lastUpdated.toLocaleTimeString('id-ID')}
+                Terakhir diperbarui: {lastUpdated.toLocaleTimeString('id-ID')}
               </span>
               {isLoading && (
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />

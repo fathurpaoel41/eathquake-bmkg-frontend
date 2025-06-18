@@ -24,22 +24,22 @@ export interface DataSourceOption {
 
 export const DATA_SOURCE_OPTIONS: DataSourceOption[] = [
   {
-    value: 'latest',
+    value: 'latest' as DataSourceType,
     label: 'Gempa Terbaru',
-    description: 'Data gempa bumi terbaru (1 data)'
+    description: 'Gempa bumi terbaru yang tercatat'
   },
   {
-    value: 'latest15',
+    value: 'latest-15' as DataSourceType,
     label: '15 Gempa Terbaru',
-    description: '15 data gempa bumi terbaru'
+    description: '15 gempa bumi terbaru yang tercatat'
   },
   {
-    value: 'felt',
+    value: 'felt' as DataSourceType,
     label: 'Gempa Dirasakan',
     description: 'Gempa bumi yang dirasakan masyarakat'
   },
   {
-    value: 'all',
+    value: 'all' as DataSourceType,
     label: 'Semua Data',
     description: 'Gabungan semua data gempa bumi'
   }
@@ -370,13 +370,14 @@ export function getMagnitudeColor(magnitude: number): string {
  * Get magnitude label based on Richter scale
  */
 export function getMagnitudeLabel(magnitude: number): string {
-  if (magnitude >= 8) return 'Great';
-  if (magnitude >= 7) return 'Major';
-  if (magnitude >= 6) return 'Strong';
-  if (magnitude >= 5) return 'Moderate';
-  if (magnitude >= 4) return 'Light';
-  if (magnitude >= 3) return 'Minor';
-  return 'Micro';
+  if (magnitude < 2.0) return 'Sangat Kecil';
+  if (magnitude < 3.0) return 'Kecil';
+  if (magnitude < 4.0) return 'Ringan';
+  if (magnitude < 5.0) return 'Sedang';
+  if (magnitude < 6.0) return 'Kuat';
+  if (magnitude < 7.0) return 'Besar';
+  if (magnitude < 8.0) return 'Sangat Besar';
+  return 'Dahsyat';
 }
 
 /**

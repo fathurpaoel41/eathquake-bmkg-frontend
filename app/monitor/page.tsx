@@ -13,7 +13,7 @@ import { EarthquakeHeader } from '@/components/earthquake-header';
 import { EarthquakeMap } from '@/components/earthquake-map';
 import { EarthquakeList } from '@/components/earthquake-list';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { AlertCircle, RefreshCw, ArrowLeft, ChevronDown, BarChart3, Info } from 'lucide-react';
+import { AlertCircle, RefreshCw, ArrowLeft, ChevronDown, BarChart3, Info, Loader2, Clock, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   Select,
@@ -26,23 +26,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
+// Refresh interval options
+const REFRESH_INTERVALS = [
+  { value: 0, label: 'Tidak Otomatis', description: 'Refresh manual saja' },
+  { value: 10, label: '10 Detik', description: 'Pembaruan sangat cepat' },
+  { value: 30, label: '30 Detik', description: 'Pembaruan cepat' },
+  { value: 60, label: '1 Menit', description: 'Pembaruan standar' },
+  { value: 300, label: '5 Menit', description: 'Pembaruan hemat' },
+];
+
 export default function MonitorPage() {
   const [earthquakes, setEarthquakes] = useState<ProcessedEarthquake[]>([]);
   const [selectedEarthquake, setSelectedEarthquake] = useState<ProcessedEarthquake | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dataSource, setDataSource] = useState<DataSourceType>('felt');
+  const [refreshInterval, setRefreshInterval] = useState<number>(10); // Default 10 seconds
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   const loadEarthquakeData = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
+        setDataLoading(true);
       } else {
         setLoading(true);
+        setDataLoading(true);
       }
       setError(null);
+      setMapLoading(true);
       
       const data = await fetchEarthquakeDataBySource(dataSource);
       setEarthquakes(data);
@@ -51,10 +67,11 @@ export default function MonitorPage() {
       // Check for recent earthquakes and send notifications
       notificationService.checkForRecentEarthquakes(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load earthquake data');
+      setError(err instanceof Error ? err.message : 'Gagal memuat data gempa bumi');
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setDataLoading(false);
     }
   }, [dataSource]);
 
@@ -63,14 +80,28 @@ export default function MonitorPage() {
     loadEarthquakeData();
   }, [loadEarthquakeData]);
 
-  // Auto-refresh every 10 seconds for monitoring
+  // Auto-refresh with configurable interval
   useEffect(() => {
-    const interval = setInterval(() => {
-      loadEarthquakeData(true);
-    }, 10 * 1000); // 10 seconds
+    // Clear existing interval
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
+    }
 
-    return () => clearInterval(interval);
-  }, [loadEarthquakeData]);
+    // Set new interval if not disabled
+    if (refreshInterval > 0) {
+      const newIntervalId = setInterval(() => {
+        loadEarthquakeData(true);
+      }, refreshInterval * 1000);
+      setIntervalId(newIntervalId);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [refreshInterval, loadEarthquakeData]);
 
   const handleManualRefresh = () => {
     loadEarthquakeData(true);
@@ -78,23 +109,49 @@ export default function MonitorPage() {
 
   const handleDataSourceChange = (newDataSource: DataSourceType) => {
     setDataSource(newDataSource);
-    setSelectedEarthquake(null); // Clear selection when changing data source
+    setSelectedEarthquake(null);
+  };
+
+  const handleRefreshIntervalChange = (newInterval: string) => {
+    setRefreshInterval(parseInt(newInterval));
+  };
+
+  const handleMapLoadingComplete = () => {
+    setMapLoading(false);
+  };
+
+  // Test notification function
+  const handleTestNotification = async () => {
+    try {
+      const hasPermission = await notificationService.requestPermission();
+      if (hasPermission) {
+        // Create a test earthquake notification
+        new Notification('🧪 Tes Notifikasi Bhukampa', {
+          body: '✅ Sistem notifikasi berfungsi dengan baik!\n📱 Anda akan menerima peringatan untuk gempa M4.0+ dalam 10 menit terakhir',
+          icon: '/favicon.ico',
+          tag: 'test-notification',
+        });
+      } else {
+        alert('Izin notifikasi belum diberikan. Silakan aktifkan notifikasi di pengaturan browser.');
+      }
+    } catch (error) {
+      console.error('Error testing notification:', error);
+      alert('Gagal mengirim notifikasi tes. Pastikan browser mendukung notifikasi.');
+    }
   };
 
   const stats = getEarthquakeStats(earthquakes);
   const currentDataOption = DATA_SOURCE_OPTIONS.find(option => option.value === dataSource);
+  const currentRefreshOption = REFRESH_INTERVALS.find(option => option.value === refreshInterval);
 
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
-
-  if (error) {
+  // Show error page only for initial load failures
+  if (loading && error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg border border-red-200 max-w-md w-full text-center">
           <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Unable to Load Earthquake Data
+            Tidak Dapat Memuat Data Gempa
           </h2>
           <p className="text-gray-600 mb-6">
             {error}
@@ -102,12 +159,12 @@ export default function MonitorPage() {
           <div className="space-y-3">
             <Button onClick={() => loadEarthquakeData()} className="w-full">
               <RefreshCw className="w-4 h-4 mr-2" />
-              Try Again
+              Coba Lagi
             </Button>
             <Link href="/">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
+                Kembali ke Beranda
               </Button>
             </Link>
           </div>
@@ -118,7 +175,7 @@ export default function MonitorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
+      {/* Navigation - Always visible, no loading */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/">
@@ -127,78 +184,134 @@ export default function MonitorPage() {
               <span>Kembali ke Beranda</span>
             </Button>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-900">Monitor Gempa Bumi</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Pemantauan Gempa Bumi</h1>
         </div>
       </div>
 
-      {/* Header */}
+      {/* Header - Always visible, no loading */}
       <EarthquakeHeader 
         lastUpdated={lastUpdated || undefined} 
         isLoading={refreshing}
       />
 
-      {/* Controls */}
+      {/* Controls - Always visible, no loading */}
       <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {/* Data Source Selector */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Sumber Data:</span>
+          <div className="flex flex-col space-y-4">
+            {/* First row - Data Source and Refresh Interval */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Data Source Selector */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <BarChart3 className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Sumber Data:</span>
+                </div>
+                <Select value={dataSource} onValueChange={handleDataSourceChange} disabled={dataLoading}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Pilih sumber data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATA_SOURCE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{option.label}</span>
+                          <span className="text-xs text-gray-500">{option.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={dataSource} onValueChange={handleDataSourceChange}>
-                <SelectTrigger className="w-64">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DATA_SOURCE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        <span className="text-xs text-gray-500">{option.description}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              {/* Refresh Interval Selector */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Pembaruan Otomatis:</span>
+                </div>
+                <Select value={refreshInterval.toString()} onValueChange={handleRefreshIntervalChange}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Pilih interval" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REFRESH_INTERVALS.map((option) => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{option.label}</span>
+                          <span className="text-xs text-gray-500">{option.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {/* Stats and Refresh */}
-            <div className="flex items-center space-x-4">
+            {/* Second row - Stats, Test Notification, and Refresh */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Stats */}
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Info className="w-4 h-4" />
-                <span>{stats.total} data</span>
-                <span>•</span>
-                <span>Update: 10 detik</span>
-                <span>•</span>
-                <span>WIB (GMT+7)</span>
+                {dataLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Memuat data...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span>{stats.total} data</span>
+                    <span>•</span>
+                    <span>Pembaruan: {currentRefreshOption?.label || 'Manual'}</span>
+                    <span>•</span>
+                    <span>WIB (GMT+7)</span>
+                  </>
+                )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManualRefresh}
-                disabled={refreshing}
-                className="flex items-center space-x-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
-              </Button>
+
+              {/* Test Notification and Refresh buttons */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestNotification}
+                  className="flex items-center space-x-2"
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Tes Notifikasi</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManualRefresh}
+                  disabled={refreshing || dataLoading}
+                  className="flex items-center space-x-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span>Perbarui</span>
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Current Data Info */}
-          {currentDataOption && (
+          {currentDataOption && !loading && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-start space-x-3">
                 <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <h3 className="font-semibold text-blue-900">{currentDataOption.label}</h3>
-                    <Badge variant="secondary">{stats.total} data</Badge>
+                    {dataLoading ? (
+                      <div className="flex items-center space-x-1">
+                        <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                        <span className="text-xs text-blue-600">Memuat...</span>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">{stats.total} data</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-blue-700 mt-1">{currentDataOption.description}</p>
-                  {stats.total > 0 && (
+                  {stats.total > 0 && !dataLoading && (
                     <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600">
                       <span>Magnitudo tertinggi: M{stats.maxMagnitude.toFixed(1)}</span>
                       <span>•</span>
@@ -214,11 +327,33 @@ export default function MonitorPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      {earthquakes.length > 0 ? (
-        <div className="flex h-[calc(100vh-280px)]">
+      {/* Main Content - Show loading states here */}
+      {loading ? (
+        <div className="flex h-[calc(100vh-320px)]">
+          <div className="w-full lg:w-1/3 border-r border-gray-200 p-4">
+            <LoadingSkeleton />
+          </div>
+          <div className="hidden lg:block lg:w-2/3 p-4">
+            <div className="h-full bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-500" />
+                <p className="text-gray-500">Memuat peta...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : earthquakes.length > 0 ? (
+        <div className="flex h-[calc(100vh-320px)]">
           {/* Earthquake List - Left Panel */}
-          <div className="w-full lg:w-1/3 border-r border-gray-200">
+          <div className="w-full lg:w-1/3 border-r border-gray-200 relative">
+            {dataLoading && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
+                  <p className="text-sm text-gray-600">Memperbarui data...</p>
+                </div>
+              </div>
+            )}
             <EarthquakeList
               earthquakes={earthquakes}
               selectedEarthquake={selectedEarthquake}
@@ -227,33 +362,55 @@ export default function MonitorPage() {
           </div>
 
           {/* Map - Right Panel */}
-          <div className="hidden lg:block lg:w-2/3">
+          <div className="hidden lg:block lg:w-2/3 relative">
+            {mapLoading && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                  <p className="text-gray-600">Memuat penanda gempa...</p>
+                  <p className="text-sm text-gray-500 mt-1">Menampilkan {earthquakes.length} gempa</p>
+                </div>
+              </div>
+            )}
             <EarthquakeMap
               earthquakes={earthquakes}
               selectedEarthquake={selectedEarthquake}
               onEarthquakeSelect={setSelectedEarthquake}
+              onLoadingComplete={handleMapLoadingComplete}
             />
           </div>
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center p-8">
-          <Card className="max-w-md w-full">
-            <CardHeader className="text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="w-6 h-6 text-gray-500" />
-              </div>
-              <CardTitle className="text-gray-900">Tidak Ada Data</CardTitle>
-              <CardDescription>
-                Tidak ada data gempa bumi untuk sumber "{currentDataOption?.label}" saat ini.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button onClick={handleManualRefresh} disabled={refreshing}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Coba Lagi
-              </Button>
-            </CardContent>
-          </Card>
+          {dataLoading ? (
+            <Card className="max-w-md w-full">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+                  <h3 className="font-semibold text-gray-900 mb-2">Memuat Data</h3>
+                  <p className="text-gray-600">Mengambil data gempa dari {currentDataOption?.label}...</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="max-w-md w-full">
+              <CardHeader className="text-center">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-6 h-6 text-gray-500" />
+                </div>
+                <CardTitle className="text-gray-900">Tidak Ada Data</CardTitle>
+                <CardDescription>
+                  Tidak ada data gempa bumi untuk sumber "{currentDataOption?.label}" saat ini.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Button onClick={handleManualRefresh} disabled={refreshing || dataLoading}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Coba Lagi
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -275,14 +432,23 @@ export default function MonitorPage() {
                 size="sm"
                 onClick={() => setSelectedEarthquake(null)}
               >
-                Close
+                Tutup
               </Button>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 relative">
+              {mapLoading && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-600">Memuat peta...</p>
+                  </div>
+                </div>
+              )}
               <EarthquakeMap
                 earthquakes={earthquakes}
                 selectedEarthquake={selectedEarthquake}
                 onEarthquakeSelect={setSelectedEarthquake}
+                onLoadingComplete={handleMapLoadingComplete}
               />
             </div>
           </div>
