@@ -5,17 +5,36 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Indonesia Earthquake Monitor | Real-time Seismic Activity',
-  description: 'Monitor real-time earthquake activity in Indonesia with interactive maps and detailed seismic data from BMKG.',
-  keywords: 'earthquake, Indonesia, BMKG, seismic activity, real-time monitoring, gempa bumi',
-  authors: [{ name: 'Indonesia Earthquake Monitor' }],
+  title: 'Bhukampa - Sistem Pemantauan Gempa Bumi Indonesia',
+  description: 'Pantau aktivitas gempa bumi real-time di Indonesia dengan data resmi dari BMKG. Dapatkan notifikasi cepat untuk gempa signifikan.',
+  keywords: ['gempa bumi', 'BMKG', 'seismik', 'Indonesia', 'pemantauan gempa', 'notifikasi gempa', 'bhukampa', 'data gempa'],
+  authors: [{ name: 'Muhammad Fathurachman' }],
   viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
   openGraph: {
-    title: 'Indonesia Earthquake Monitor',
-    description: 'Real-time earthquake monitoring for Indonesia with interactive maps and BMKG data',
-    type: 'website',
+    title: 'Bhukampa - Sistem Pemantauan Gempa Bumi Indonesia',
+    description: 'Pantau aktivitas gempa bumi real-time di Indonesia dengan data resmi dari BMKG',
+    url: 'https://bhukampa.vercel.app',
+    siteName: 'Bhukampa',
+    images: [
+      {
+        url: 'https://bhukampa.vercel.app/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Bhukampa - Pemantauan Gempa Bumi',
+      },
+    ],
     locale: 'id_ID',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Bhukampa - Sistem Pemantauan Gempa Bumi Indonesia',
+    description: 'Pantau aktivitas gempa bumi real-time di Indonesia dengan data resmi dari BMKG',
+    images: ['https://bhukampa.vercel.app/og-image.jpg'],
+  },
+  alternates: {
+    canonical: 'https://bhukampa.vercel.app',
   },
 };
 
