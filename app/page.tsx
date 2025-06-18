@@ -261,6 +261,65 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* Earthquake Information Section */}
+      <div className="py-16 bg-slate-900/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Informasi Gempa Bumi</h2>
+            <p className="text-gray-400">Pahami lebih dalam tentang fenomena gempa bumi</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            {/* Basic Information */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-semibold text-white mb-4">Apa Itu Gempa Bumi?</h3>
+              <div className="space-y-4 text-gray-300">
+                <p>Gempa bumi adalah getaran atau guncangan yang terjadi di permukaan bumi akibat pelepasan energi secara tiba-tiba dari dalam bumi.</p>
+                <p>Penyebab utama gempa bumi:</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Pergerakan lempeng tektonik</li>
+                  <li>Aktivitas vulkanik</li>
+                  <li>Runtuhan batuan</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Safety Tips */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-semibold text-white mb-4">Tips Keselamatan</h3>
+              <div className="space-y-4 text-gray-300">
+                <p>Yang harus dilakukan saat gempa terjadi:</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Jangan panik, cari tempat berlindung yang aman</li>
+                  <li>Lindungi kepala dengan tangan atau benda keras</li>
+                  <li>Jauhi jendela, rak, atau benda yang mungkin jatuh</li>
+                  <li>Jika di luar, jauhi bangunan dan tiang listrik</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <h3 className="text-xl font-semibold text-white mb-4">Pertanyaan Umum</h3>
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-lg font-medium text-white mb-2">Apa yang dimaksud dengan magnitudo gempa?</h4>
+                <p className="text-gray-400">Magnitudo adalah ukuran kekuatan gempa yang dihitung berdasarkan energi yang dilepaskan. Skala Richter adalah yang paling umum digunakan.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-medium text-white mb-2">Mengapa Indonesia sering mengalami gempa?</h4>
+                <p className="text-gray-400">Indonesia terletak di pertemuan tiga lempeng tektonik utama (Eurasia, Indo-Australia, dan Pasifik) yang aktif bergerak.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-medium text-white mb-2">Bagaimana cara membedakan gempa tektonik dan vulkanik?</h4>
+                <p className="text-gray-400">Gempa tektonik disebabkan pergerakan lempeng, sedangkan vulkanik terkait aktivitas gunung berapi. Gempa vulkanik biasanya lebih lokal.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Footer */}
       <footer className="bg-slate-900/50 backdrop-blur-sm border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

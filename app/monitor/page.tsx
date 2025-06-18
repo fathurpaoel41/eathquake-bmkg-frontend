@@ -45,20 +45,27 @@ export default function MonitorPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dataSource, setDataSource] = useState<DataSourceType>('felt');
-  const [refreshInterval, setRefreshInterval] = useState<number>(10); // Default 10 seconds
+  const [refreshInterval, setRefreshInterval] = useState<number>(60); // Default 10 seconds
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   const loadEarthquakeData = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
-        setDataLoading(true);
+        // Only set dataLoading if auto-refresh is enabled
+        if (refreshInterval > 0) {
+          setDataLoading(true);
+        }
       } else {
         setLoading(true);
         setDataLoading(true);
       }
       setError(null);
-      setMapLoading(true);
+      
+      // Only set map loading if we're actually loading data
+      if (!isRefresh || refreshInterval > 0) {
+        setMapLoading(true);
+      }
       
       const data = await fetchEarthquakeDataBySource(dataSource);
       setEarthquakes(data);
@@ -73,7 +80,7 @@ export default function MonitorPage() {
       setRefreshing(false);
       setDataLoading(false);
     }
-  }, [dataSource]);
+  }, [dataSource, refreshInterval]);
 
   // Initial load
   useEffect(() => {
@@ -113,11 +120,23 @@ export default function MonitorPage() {
   };
 
   const handleRefreshIntervalChange = (newInterval: string) => {
-    setRefreshInterval(parseInt(newInterval));
+    const interval = parseInt(newInterval);
+    setRefreshInterval(interval);
+    
+    // If switching to manual mode, clear any loading states
+    if (interval === 0) {
+      setDataLoading(false);
+      setRefreshing(false);
+    }
   };
 
   const handleMapLoadingComplete = () => {
     setMapLoading(false);
+  };
+
+  // Enhanced earthquake selection handler
+  const handleEarthquakeSelect = (earthquake: ProcessedEarthquake) => {
+    setSelectedEarthquake(earthquake);
   };
 
   // Test notification function
@@ -191,7 +210,7 @@ export default function MonitorPage() {
       {/* Header - Always visible, no loading */}
       <EarthquakeHeader 
         lastUpdated={lastUpdated || undefined} 
-        isLoading={refreshing}
+        isLoading={refreshing && refreshInterval > 0}
       />
 
       {/* Controls - Always visible, no loading */}
@@ -206,7 +225,7 @@ export default function MonitorPage() {
                   <BarChart3 className="w-4 h-4 text-gray-500" />
                   <span className="text-sm font-medium text-gray-700">Sumber Data:</span>
                 </div>
-                <Select value={dataSource} onValueChange={handleDataSourceChange} disabled={dataLoading}>
+                <Select value={dataSource} onValueChange={handleDataSourceChange} disabled={dataLoading && refreshInterval > 0}>
                   <SelectTrigger className="w-64">
                     <SelectValue placeholder="Pilih sumber data" />
                   </SelectTrigger>
@@ -252,7 +271,7 @@ export default function MonitorPage() {
               {/* Stats */}
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Info className="w-4 h-4" />
-                {dataLoading ? (
+                {dataLoading && refreshInterval > 0 ? (
                   <div className="flex items-center space-x-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Memuat data...</span>
@@ -283,7 +302,7 @@ export default function MonitorPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleManualRefresh}
-                  disabled={refreshing || dataLoading}
+                  disabled={refreshing || (dataLoading && refreshInterval > 0)}
                   className="flex items-center space-x-2"
                 >
                   <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -293,7 +312,7 @@ export default function MonitorPage() {
             </div>
           </div>
 
-          {/* Current Data Info */}
+          {/* Current Data Info
           {currentDataOption && !loading && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-start space-x-3">
@@ -301,7 +320,7 @@ export default function MonitorPage() {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <h3 className="font-semibold text-blue-900">{currentDataOption.label}</h3>
-                    {dataLoading ? (
+                    {dataLoading && refreshInterval > 0 ? (
                       <div className="flex items-center space-x-1">
                         <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
                         <span className="text-xs text-blue-600">Memuat...</span>
@@ -311,7 +330,7 @@ export default function MonitorPage() {
                     )}
                   </div>
                   <p className="text-sm text-blue-700 mt-1">{currentDataOption.description}</p>
-                  {stats.total > 0 && !dataLoading && (
+                  {stats.total > 0 && !(dataLoading && refreshInterval > 0) && (
                     <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600">
                       <span>Magnitudo tertinggi: M{stats.maxMagnitude.toFixed(1)}</span>
                       <span>•</span>
@@ -323,7 +342,7 @@ export default function MonitorPage() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
 
@@ -346,7 +365,7 @@ export default function MonitorPage() {
         <div className="flex h-[calc(100vh-320px)]">
           {/* Earthquake List - Left Panel */}
           <div className="w-full lg:w-1/3 border-r border-gray-200 relative">
-            {dataLoading && (
+            {dataLoading && refreshInterval > 0 && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                 <div className="text-center">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
@@ -357,7 +376,7 @@ export default function MonitorPage() {
             <EarthquakeList
               earthquakes={earthquakes}
               selectedEarthquake={selectedEarthquake}
-              onEarthquakeSelect={setSelectedEarthquake}
+              onEarthquakeSelect={handleEarthquakeSelect}
             />
           </div>
 
@@ -382,7 +401,7 @@ export default function MonitorPage() {
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center p-8">
-          {dataLoading ? (
+          {dataLoading && refreshInterval > 0 ? (
             <Card className="max-w-md w-full">
               <CardContent className="pt-6">
                 <div className="text-center">
@@ -404,7 +423,7 @@ export default function MonitorPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                <Button onClick={handleManualRefresh} disabled={refreshing || dataLoading}>
+                <Button onClick={handleManualRefresh} disabled={refreshing || (dataLoading && refreshInterval > 0)}>
                   <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                   Coba Lagi
                 </Button>
